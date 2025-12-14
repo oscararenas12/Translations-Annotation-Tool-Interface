@@ -10,7 +10,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: './',  // Relative paths for GitHub Pages
+  base: '/Translations-Annotation-Tool-Interface/',  // GitHub Pages subdirectory
   build: {
     target: 'esnext',
     outDir: 'dist',  // Standard Vite output directory
