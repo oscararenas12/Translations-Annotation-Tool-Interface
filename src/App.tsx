@@ -5,7 +5,7 @@ import { Button } from './components/ui/button';
 import { TranslationCard } from './components/TranslationCard';
 import { StandardCard } from './components/StandardCard';
 import { AnnotationSection } from './components/AnnotationSection';
-import sampleData from '../data/english_ngss_evaluation.json';
+import sampleData from '../data/english_evaluation_sample.json';
 
 // Matched standard from the real data
 export interface MatchedStandard {
