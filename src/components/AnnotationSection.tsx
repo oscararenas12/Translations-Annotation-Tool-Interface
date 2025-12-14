@@ -1,132 +1,104 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-
-interface Standard {
-  id: string;
-  description: string;
-}
-
-interface Translation {
-  id: string;
-  target_grade: string;
-  target_age: string;
-}
+import type { TranslationRecord, MatchedStandard } from '../App';
 
 interface AnnotationSectionProps {
-  translations: Translation[];
-  standards: Standard[];
+  translation: TranslationRecord;
+  standards: MatchedStandard[];
 }
 
-export function AnnotationSection({ translations, standards }: AnnotationSectionProps) {
-  // Simple state for visual demo - ratings for each translation
-  const [ratings, setRatings] = useState<number[]>(translations.map(() => 0));
-  const [standardRatings, setStandardRatings] = useState<number[]>(translations.map(() => 0));
+export function AnnotationSection({ translation, standards }: AnnotationSectionProps) {
+  const [translationRating, setTranslationRating] = useState<string | null>(null);
+  const [standardRatings, setStandardRatings] = useState<(string | null)[]>(standards.map(() => null));
 
-  const handleRating = (index: number, rating: number) => {
-    const newRatings = [...ratings];
-    newRatings[index] = rating;
-    setRatings(newRatings);
-  };
-
-  const handleStandardRating = (index: number, rating: number) => {
+  const handleStandardRating = (index: number, rating: string) => {
     const newRatings = [...standardRatings];
     newRatings[index] = rating;
     setStandardRatings(newRatings);
   };
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg text-gray-900 dark:text-white">Annotation</h2>
+  const ratingOptions = ['Worst', 'Middle', 'Best'];
 
-      {/* Individual Annotation Cards for Each Translation */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {translations.map((translation, translationIndex) => (
-          <Card key={translationIndex} className="border-2 border-blue-200 dark:border-blue-800">
-            <CardHeader className="pb-3 bg-blue-50 dark:bg-blue-950/30">
-              <CardTitle className="text-base">
-                Translation Quality Rating
-              </CardTitle>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                ID: {translation.id} — {translation.target_grade}
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-4">
-              {/* Translation Quality Rating */}
-              <div>
-                <div className="flex gap-2 mb-2 justify-between">
-                  {[1, 2, 3, 4, 5].map((rating) => (
+  return (
+    <Card className="border-2 border-blue-200 dark:border-blue-800 h-full flex flex-col">
+      <CardHeader className="pb-3 bg-blue-50 dark:bg-blue-950/30">
+        <CardTitle className="text-base flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">ID:</span>
+            <Badge variant="default" className="text-sm px-3 py-1">{translation.id}</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">Target Grade:</span>
+            <Badge variant="default" className="text-sm px-3 py-1">{translation.target_grade}</Badge>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4 space-y-4 flex-1 overflow-y-auto">
+        {/* Translation Quality */}
+        <div className="space-y-2">
+          <Label className="block text-sm font-medium">Translation Quality</Label>
+          <div className="flex gap-2">
+            {ratingOptions.map((option) => (
+              <Button
+                key={option}
+                variant={translationRating === option ? 'default' : 'secondary'}
+                size="sm"
+                onClick={() => setTranslationRating(option)}
+                className="flex-1"
+                style={{ border: '1px solid #d1d5db' }}
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Comment */}
+        <div>
+          <Textarea
+            placeholder="Add comment..."
+            rows={3}
+            className="border-2 border-gray-300 dark:border-gray-600"
+          />
+        </div>
+
+        {/* Standards Alignment */}
+        <div className="space-y-4 border-t pt-4">
+          <Label className="block text-sm font-medium">Standards Alignment</Label>
+          <div className="space-y-4 max-h-64 overflow-y-auto">
+            {standards.map((standard, index) => (
+              <div key={index} className="space-y-2">
+                <div className="text-xs text-gray-700 dark:text-gray-300">
+                  {standard.standard_code}
+                </div>
+                <div className="flex gap-2">
+                  {ratingOptions.map((option) => (
                     <Button
-                      key={rating}
-                      variant={ratings[translationIndex] === rating ? 'default' : 'outline'}
+                      key={option}
+                      variant={standardRatings[index] === option ? 'default' : 'secondary'}
                       size="sm"
-                      onClick={() => handleRating(translationIndex, rating)}
-                      className="flex-1 min-w-0"
+                      onClick={() => handleStandardRating(index, option)}
+                      className="flex-1"
+                      style={{ border: '1px solid #d1d5db' }}
                     >
-                      {rating}
+                      {option}
                     </Button>
                   ))}
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
-                  <span>Poor</span>
-                  <span>Excellent</span>
-                </div>
-              </div>
-
-              {/* Translation Notes */}
-              <div>
-                <Label className="mb-2 block text-sm">Notes:</Label>
                 <Textarea
-                  placeholder="Comments about this translation..."
-                  rows={3}
+                  placeholder="Add comment..."
+                  rows={2}
+                  className="border-2 border-gray-300 dark:border-gray-600"
                 />
               </div>
-
-              {/* Standard Rating - Only show the standard corresponding to this translation */}
-              {standards[translationIndex] && (
-                <div className="border-t pt-4">
-                  <Label className="mb-3 block">Standard Rating:</Label>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-sm text-gray-900 dark:text-white mb-2">
-                        {standards[translationIndex].id}
-                      </div>
-                      <div className="flex gap-2 justify-between">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <Button
-                            key={rating}
-                            variant={standardRatings[translationIndex] === rating ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => handleStandardRating(translationIndex, rating)}
-                            className="flex-1 min-w-0"
-                          >
-                            {rating}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
-                      <span>Poor</span>
-                      <span>Excellent</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Standard Notes */}
-              <div>
-                <Label className="mb-2 block text-sm">Notes:</Label>
-                <Textarea
-                  placeholder="Comments about standards alignment..."
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

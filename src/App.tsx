@@ -1,11 +1,24 @@
 import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from './components/ui/badge';
+import { Button } from './components/ui/button';
 import { TranslationCard } from './components/TranslationCard';
 import { StandardCard } from './components/StandardCard';
 import { AnnotationSection } from './components/AnnotationSection';
+import sampleData from '../data/english_ngss_evaluation.json';
 
-// Data structure for display
-interface TranslationRecord {
+// Matched standard from the real data
+export interface MatchedStandard {
+  standard_code: string;
+  description: string;
+  academic_subject: string;
+  grade_levels: string[];
+  jurisdiction: string;
+  similarity_score: number;
+}
+
+// Translation record matching the actual data structure
+export interface TranslationRecord {
   id: string;
   english_text: string;
   textbook_grade: string;
@@ -24,110 +37,43 @@ interface TranslationRecord {
   fernandez_huerta_score: number;
   fernandez_huerta_grade: number;
   fernandez_huerta_age: string;
+  model: string;
+  NGSS_matched_standards: MatchedStandard[];
 }
 
-interface Standard {
-  id: string;
-  description: string;
-}
-
-interface GroupedSample {
-  id: string;
-  english_text: string;
-  textbook_grade: string;
-  domain: string;
-  subject: string;
-  translations: TranslationRecord[];
-  standards: Standard[];
-}
-
-// Demo data
-const demoSample: GroupedSample = {
-  id: "17cbcbbd",
-  english_text: "Golgi Apparatus: As proteins leave the endoplasmic reticulum, they move to a structure that looks like the flattened sacs and tubes shown in Figures 3 and 4. This structure can be thought of as a cell's warehouse. The Golgi apparatus receives proteins and other newly formed materials from the ER, packages them, and distributes them to other parts of the cell or to the outside of the cell.",
-  textbook_grade: "Middle School",
-  domain: "Life Science",
-  subject: "Looking Inside Cells",
-  translations: [
-    {
-      id: "17cbcbbd",
-      english_text: "Golgi Apparatus: As proteins leave the endoplasmic reticulum, they move to a structure that looks like the flattened sacs and tubes shown in Figures 3 and 4. This structure can be thought of as a cell's warehouse. The Golgi apparatus receives proteins and other newly formed materials from the ER, packages them, and distributes them to other parts of the cell or to the outside of the cell.",
-      textbook_grade: "Middle School",
-      target_grade: "5th",
-      target_age: "10-11",
-      domain: "Life Science",
-      subject: "Looking Inside Cells",
-      spanish_translation: "El aparato de Golgi: Las proteínas salen de la red interna de la célula y van a un espacio dentro de la célula con bolsas y tubos planos, como se muestra en las Figuras 3 y 4. Este espacio es como un almacén. El aparato de Golgi recibe proteínas y otras cosas nuevas, las organiza y las lleva a otras partes de la célula o fuera de ella.",
-      valid_translation: true,
-      validation_reason: "",
-      tokens: 8988,
-      attempts: 4,
-      success: true,
-      final_status: "SUCCESS_EXACT",
-      flesh_grade: 10.60294117647059,
-      fernandez_huerta_score: 84.01411764705881,
-      fernandez_huerta_grade: 5,
-      fernandez_huerta_age: "10-11"
-    },
-    {
-      id: "17cbcbbd",
-      english_text: "Golgi Apparatus: As proteins leave the endoplasmic reticulum, they move to a structure that looks like the flattened sacs and tubes shown in Figures 3 and 4. This structure can be thought of as a cell's warehouse. The Golgi apparatus receives proteins and other newly formed materials from the ER, packages them, and distributes them to other parts of the cell or to the outside of the cell.",
-      textbook_grade: "Middle School",
-      target_grade: "6th",
-      target_age: "11-12",
-      domain: "Life Science",
-      subject: "Looking Inside Cells",
-      spanish_translation: "El aparato de Golgi es como un sistema de entrega dentro de la célula. Recibe proteínas y las organiza para enviarlas a donde la célula las necesite.",
-      valid_translation: true,
-      validation_reason: "",
-      tokens: 10370,
-      attempts: 5,
-      success: true,
-      final_status: "SUCCESS_EXACT",
-      flesh_grade: 10.60294117647059,
-      fernandez_huerta_score: 73.07000000000001,
-      fernandez_huerta_grade: 6,
-      fernandez_huerta_age: "11-12"
-    },
-    {
-      id: "17cbcbbd",
-      english_text: "Golgi Apparatus: As proteins leave the endoplasmic reticulum, they move to a structure that looks like the flattened sacs and tubes shown in Figures 3 and 4. This structure can be thought of as a cell's warehouse. The Golgi apparatus receives proteins and other newly formed materials from the ER, packages them, and distributes them to other parts of the cell or to the outside of the cell.",
-      textbook_grade: "Middle School",
-      target_grade: "7th-8th",
-      target_age: "12-14",
-      domain: "Life Science",
-      subject: "Looking Inside Cells",
-      spanish_translation: "Aparato de Golgi: A medida que las proteínas abandonan el retículo endoplásmico, se mueven a una estructura que se asemeja a las bolsas y tubos achatados mostrados en las Figuras 3 y 4. Esta estructura se puede pensar como una especie de almacén de la célula. El aparato de Golgi recibe proteínas y otros materiales recién formados del retículo endoplásmico, los empaqueta y los distribuye a otras partes de la célula o al exterior de la célula.",
-      valid_translation: true,
-      validation_reason: "",
-      tokens: 1307,
-      attempts: 1,
-      success: true,
-      final_status: "SUCCESS_EXACT",
-      flesh_grade: 10.60294117647059,
-      fernandez_huerta_score: 62.997662337662334,
-      fernandez_huerta_grade: 7.5,
-      fernandez_huerta_age: "12-14"
-    }
-  ],
-  standards: [
-    {
-      id: "MS-LS1-2",
-      description: "Develop and use a model to describe the function of a cell as a whole and ways the parts of cells contribute to the function. [Clarification Statement: Emphasis is on the cell functioning as a whole system and the primary role of identified parts of the cell, specifically the nucleus, chloroplasts, mitochondria, cell membrane, and cell wall.] [Assessment Boundary: Assessment of organelle structure/function relationships is limited to the cell wall and cell membrane.]"
-    },
-    {
-      id: "MS-LS1-3",
-      description: "Use argument supported by evidence for how the body is a system of interacting subsystems composed of groups of cells. [Clarification Statement: Emphasis is on the conceptual understanding that cells form tissues and tissues form organs specialized for particular body functions.] [Assessment Boundary: Assessment does not include the mechanism of one body system independent of others.]"
-    },
-    {
-      id: "6-8.LS1.A",
-      description: "All living things are made up of cells, which is the smallest unit that can be said to be alive. An organism may consist of one single cell (unicellular) or many different numbers and types of cells (multicellular). Within cells, special structures are responsible for particular functions, and the cell membrane forms the boundary that controls what enters and leaves the cell."
-    }
-  ]
-};
+// Type the imported data
+const data = sampleData as TranslationRecord[];
 
 export default function App() {
   const [darkMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const samplesPerPage = 3;
+  const totalPages = Math.ceil(data.length / samplesPerPage);
+  const startIndex = currentPage * samplesPerPage;
+  const currentSamples = data.slice(startIndex, startIndex + samplesPerPage);
+
+  const handlePrev = () => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  if (currentSamples.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="text-center">
+          <p className="text-gray-900 dark:text-white">No data available.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={darkMode ? 'dark' : ''}>
@@ -139,42 +85,83 @@ export default function App() {
               <h1 className="text-gray-900 dark:text-white">Translation Review — Annotation Tool</h1>
 
               <div className="flex items-center gap-3 flex-wrap">
+                {/* Page Counter */}
                 <Badge variant="secondary">
-                  Demo Sample
+                  Page {currentPage + 1} of {totalPages} ({data.length} samples)
                 </Badge>
+
+                {/* Navigation */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="default"
+                    size="lg"
+                    onClick={handlePrev}
+                    disabled={currentPage === 0}
+                    className="px-6"
+                  >
+                    <ChevronLeft className="h-5 w-5 mr-1" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="lg"
+                    onClick={handleNext}
+                    disabled={currentPage === totalPages - 1}
+                    className="px-6"
+                  >
+                    Next
+                    <ChevronRight className="h-5 w-5 ml-1" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Main Content */}
+        {/* Main Content - 3 Samples Per Page (Row-Based Grid) */}
         <main className="max-w-[1600px] mx-auto px-6 py-6">
+          <div className="grid grid-cols-3 gap-4">
+            {/* Row 1: Sample Headers */}
+            {currentSamples.map((_, i) => (
+              <div key={`header-${i}`} className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Sample {startIndex + i + 1}
+              </div>
+            ))}
 
-          {/* Translation Cards */}
-          <div className="mb-6">
-            <h2 className="text-lg mb-3 text-gray-900 dark:text-white">Translations</h2>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-              {demoSample.translations.map((translation, index) => (
-                <TranslationCard key={index} translation={translation} index={index} />
-              ))}
-            </div>
+            {/* Row 2: Translation Cards */}
+            {currentSamples.map((sample, i) => (
+              <div key={`trans-${i}`} className="h-[400px]">
+                <TranslationCard translation={sample} />
+              </div>
+            ))}
+
+            {/* Row 3: NGSS Standards */}
+            {currentSamples.map((sample, i) => (
+              <div key={`std-${i}`} className="h-[200px] flex flex-col">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex-shrink-0 h-5">
+                  {i === 0 && 'NGSS Standards for English text'}
+                </div>
+                <div className="flex-1 min-h-0">
+                  <StandardCard standards={sample.NGSS_matched_standards} />
+                </div>
+              </div>
+            ))}
+
+            {/* Row 4: Annotations */}
+            {currentSamples.map((sample, i) => (
+              <div key={`anno-${i}`} className="h-[350px] flex flex-col">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex-shrink-0 h-5">
+                  {i === 0 && 'Annotations'}
+                </div>
+                <div className="flex-1 min-h-0">
+                  <AnnotationSection
+                    translation={sample}
+                    standards={sample.NGSS_matched_standards}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-
-          {/* Standards Section */}
-          <div className="mb-6">
-            <h2 className="text-lg mb-3 text-gray-900 dark:text-white">AI Standards</h2>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-              {demoSample.standards.map((standard, index) => (
-                <StandardCard key={index} standard={standard} />
-              ))}
-            </div>
-          </div>
-
-          {/* Annotation Section */}
-          <AnnotationSection
-            translations={demoSample.translations}
-            standards={demoSample.standards}
-          />
         </main>
       </div>
     </div>
