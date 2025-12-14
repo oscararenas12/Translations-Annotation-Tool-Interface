@@ -68,7 +68,7 @@ type AnnotationsMap = Record<string, Annotations>;
 // localStorage keys
 const STORAGE_KEY = 'translation-annotations';
 const AUTH_KEY = 'translation-tool-auth';
-const APP_PASSWORD = 'AIEdu2025!';
+const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD || '';
 
 // Load annotations from localStorage
 const loadAnnotations = (): AnnotationsMap => {
